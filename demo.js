@@ -20,27 +20,33 @@ var db;
 var current_view_pub_key;
 
 function openDb() {
-  console.log("openDb ...");
+  //console.log("openDb ...");
   var req = indexedDB.open(DB_NAME, DB_VERSION)
 
   req.onsuccess = function (evt) {
     db = evt.target.result;
-    console.log("openDb DONE");
+    //console.log("openDb DONE");
   }
 
   req.onerror = function (evt) {
     console.error("openDb:", evt.target.errorCode);
-  };
+  }
 
   req.onupgradeneeded = function (evt) {
-    console.log("openDb.onupgradeneeded");
-    var store = evt.currentTarget.result.createObjectStore(
-      DB_STORE_NAME, { keyPath: 'id', autoIncrement: true });
+    //console.log("openDb.onupgradeneeded");
+    let db = evt.target.result
+    let store = db.createObjectStore( 
+      DB_STORE_NAME, 
+      { 
+        keyPath: 'id', 
+        autoIncrement: true 
+      }
+    )
 
-    store.createIndex('biblioID', 'biblioID', { unique: true });
-    store.createIndex('title', 'title', { unique: false });
-    store.createIndex('year', 'year', { unique: false });
-  };
+    store.createIndex('biblioID', 'biblioID', { unique: true })
+    store.createIndex('title', 'title', { unique: false })
+    store.createIndex('year', 'year', { unique: false })
+  }
 }
 
 /**
@@ -78,7 +84,7 @@ function getBlob(key, store, success_callback) {
  * @param {IDBObjectStore=} store
  */
 function displayPubList(store) {
-  console.log("displayPubList");
+  //console.log("displayPubList");
 
   if (typeof store == 'undefined')
     store = getObjectStore(DB_STORE_NAME, 'readonly');
@@ -90,63 +96,58 @@ function displayPubList(store) {
   // Resetting the iframe so that it doesn't display previous content
   newViewerFrame();
 
-  var req;
+  var req
   req = store.count();
-  // Requests are executed in the order in which they were made against the
-  // transaction, and their results are returned in the same order.
-  // Thus the count text below will be displayed before the actual pub list
-  // (not that it is algorithmically important in this case).
   req.onsuccess = function(evt) {
-    pub_msg.append('<p>There are <strong>' + evt.target.result +
-                   '</strong> record(s) in the object store.</p>');
-  };
+    pub_msg.append(`<p>There are <strong>${evt.target.result}</strong> record(s) in the object store.</p>`);
+  }
   req.onerror = function(evt) {
-    console.error("add error", this.error);
-    displayActionFailure(this.error);
-  };
+    console.error("add error", this.error)
+    displayActionFailure(this.error)
+  }
 
-  var i = 0;
-  req = store.openCursor();
+  req = store.openCursor()
   req.onsuccess = function(evt) {
-    var cursor = evt.target.result;
+    var cursor = evt.target.result
 
-    // If the cursor is pointing at something, ask for the data
     if (cursor) {
-      console.log("displayPubList cursor:", cursor);
       req = store.get(cursor.key);
       req.onsuccess = function (evt) {
-        var value = evt.target.result;
-        var list_item = $('<li>' +
-                          '[' + cursor.key + '] ' +
-                          '(biblioID: ' + value.biblioID + ') ' +
-                          value.title +
-                          '</li>');
-        if (value.year != null)
-          list_item.append(' - ' + value.year);
-
-        if (value.hasOwnProperty('blob') &&
-            typeof value.blob != 'undefined') {
-          var link = $('<a href="' + cursor.key + '">File</a>');
-          link.on('click', function() { return false; });
-          link.on('mouseenter', function(evt) {
-                    setInViewer(evt.target.getAttribute('href')); });
-          list_item.append(' / ');
-          list_item.append(link);
-        } else {
-          list_item.append(" / No attached file");
-        }
-        pub_list.append(list_item);
-      };
+        var value = evt.target.result
+        render(value)
+      }
 
       // Move on to the next object in store
-      cursor.continue();
+      cursor.continue()
 
-      // This counter serves only to create distinct ids
-      i++;
     } else {
-      console.log("No more entries");
+      //console.log("No more entries");
     }
   };
+}
+
+let render = value => {
+  let pub_msg = $('#pub-msg');
+  let pub_list = $('#pub-list');
+  let list_item = $(`<li>
+     [biblioID: ${value.biblioID}]
+     ${value.title}
+     ${value.year? `- ${value.year} ` : ""}
+     </li>`
+  )
+
+  if (value.hasOwnProperty('blob') && typeof value.blob != 'undefined') {
+    let button = document.createElement('button')
+    button.textContent = 'show'
+    button.addEventListener('click', function(evt) { 
+      setInViewer(value.id)
+    })
+    list_item.append(' / ')
+    list_item.append(button)
+  } else {
+    list_item.append(" / No attached file")
+  }
+  pub_list.append(list_item)
 }
 
 function newViewerFrame() {
@@ -157,17 +158,17 @@ function newViewerFrame() {
   return iframe;
 }
 
-function setInViewer(key) {
-  console.log("setInViewer:", arguments);
-  key = Number(key);
-  if (key == current_view_pub_key)
+function setInViewer(id) {
+  //key = Number(value.id)
+  //if (key == current_view_pub_key)
+  if (id == current_view_pub_key)
     return;
 
-  current_view_pub_key = key;
+  //current_view_pub_key = key;
+  current_view_pub_key = id;
 
   var store = getObjectStore(DB_STORE_NAME, 'readonly');
-  getBlob(key, store, function(blob) {
-    console.log("setInViewer blob:", blob);
+  getBlob(id, store, function(blob) {
     var iframe = newViewerFrame();
 
     // It is not possible to set a direct link to the
@@ -183,7 +184,8 @@ function setInViewer(key) {
       reader.readAsText(blob);
     } else if (blob.type.indexOf('image/') == 0) {
       iframe.load(function() {
-        var img_id = 'image-' + key;
+        //var img_id = 'image-' + key;
+        var img_id = 'image-' + id;
         var img = $('<img id="' + img_id + '"/>');
         $(this).contents().find('body').html(img);
         var obj_url = window.URL.createObjectURL(blob);
@@ -217,7 +219,7 @@ function setInViewer(key) {
  *   the same origin as the web site/app this code is deployed on.
  */
 function addPublicationFromUrl(biblioID, title, year, url) {
-  console.log("addPublicationFromUrl:", arguments);
+  //console.log("addPublicationFromUrl:", arguments);
 
   var xhr = new XMLHttpRequest();
   xhr.open('GET', url, true);
@@ -226,9 +228,9 @@ function addPublicationFromUrl(biblioID, title, year, url) {
   xhr.responseType = 'blob';
   xhr.onload = function (evt) {
     if (xhr.status == 200) {
-      console.log("Blob retrieved");
+      //console.log("Blob retrieved");
       var blob = xhr.response;
-      console.log("Blob:", blob);
+      //console.log("Blob:", blob);
       addPublication(biblioID, title, year, blob);
     } else {
       console.error("addPublicationFromUrl error:",
@@ -264,7 +266,7 @@ function addPublicationFromUrl(biblioID, title, year, url) {
  * @param {Blob=} blob
  */
 function addPublication(biblioID, title, year, blob) {
-  console.log("addPublication arguments:", arguments);
+  //console.log("addPublication arguments:", arguments);
   var obj = { biblioID: biblioID, title: title, year: year };
   if (typeof blob != 'undefined')
     obj.blob = blob;
@@ -280,7 +282,7 @@ function addPublication(biblioID, title, year, blob) {
     throw e;
   }
   req.onsuccess = function (evt) {
-    console.log("Insertion in DB successful");
+    //console.log("Insertion in DB successful");
     displayActionSuccess();
     displayPubList(store);
   };
@@ -294,7 +296,7 @@ function addPublication(biblioID, title, year, blob) {
  * @param {string} biblioID
  */
 function deletePublicationFromBib(biblioID) {
-  console.log("deletePublication:", arguments);
+  //console.log("deletePublication:", arguments);
   var store = getObjectStore(DB_STORE_NAME, 'readwrite');
   var req = store.index('biblioID');
   req.get(biblioID).onsuccess = function(evt) {
@@ -314,7 +316,7 @@ function deletePublicationFromBib(biblioID) {
  * @param {IDBObjectStore=} store
  */
 function deletePublication(key, store) {
-  console.log("deletePublication:", arguments);
+  //console.log("deletePublication:", arguments);
 
   if (typeof store == 'undefined')
     store = getObjectStore(DB_STORE_NAME, 'readwrite');
@@ -326,7 +328,7 @@ function deletePublication(key, store) {
   var req = store.get(key);
   req.onsuccess = function(evt) {
     var record = evt.target.result;
-    console.log("record:", record);
+    //console.log("record:", record);
     if (typeof record == 'undefined') {
       displayActionFailure("No matching record found");
       return;
@@ -336,10 +338,10 @@ function deletePublication(key, store) {
     // be a Number for deletion.
     req = store.delete(key);
     req.onsuccess = function(evt) {
-      console.log("evt:", evt);
-      console.log("evt.target:", evt.target);
-      console.log("evt.target.result:", evt.target.result);
-      console.log("delete successful");
+      //console.log("evt:", evt);
+      //console.log("evt.target:", evt.target);
+      //console.log("evt.target.result:", evt.target.result);
+      //console.log("delete successful");
       displayActionSuccess("Deletion successful");
       displayPubList(store);
     };
@@ -361,20 +363,20 @@ function displayActionFailure(msg) {
   $('#msg').html('<span class="action-failure">' + msg + '</span>');
 }
 function resetActionStatus() {
-  console.log("resetActionStatus ...");
+  //console.log("resetActionStatus ...");
   $('#msg').empty();
-  console.log("resetActionStatus DONE");
+  //console.log("resetActionStatus DONE");
 }
 
 function addEventListeners() {
-  console.log("addEventListeners");
+  //console.log("addEventListeners");
 
   $('#register-form-reset').click(function(evt) {
     resetActionStatus();
   });
 
   $('#add-button').click(function(evt) {
-    console.log("add ...");
+    //console.log("add ...");
     var title = $('#pub-title').val();
     var biblioID = $('#pub-biblioID').val();
     if (!title || !biblioID) {
@@ -395,7 +397,7 @@ function addEventListeners() {
 
     var file_input = $('#pub-file');
     var selected_file = file_input.get(0).files[0];
-    console.log("selected_file:", selected_file);
+    //console.log("selected_file:", selected_file);
     // Keeping a reference on how to reset the file input in the UI once we
     // have its value, but instead of doing that we rather use a "reset" type
     // input in the HTML form.
@@ -412,7 +414,7 @@ function addEventListeners() {
   });
 
   $('#delete-button').click(function(evt) {
-    console.log("delete ...");
+    //console.log("delete ...");
     var biblioID = $('#pub-biblioID-to-delete').val();
     var key = $('#key-to-delete').val();
 
