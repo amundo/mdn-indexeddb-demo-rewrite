@@ -213,56 +213,6 @@ function setInViewer(id) {
  * @param {string} biblioID
  * @param {string} title
  * @param {number} year
- * @param {string} url the URL of the image to download and store in the local
- *   IndexedDB database. The resource behind this URL is subjected to the
- *   "Same origin policy", thus for this method to work, the URL must come from
- *   the same origin as the web site/app this code is deployed on.
- */
-function addPublicationFromUrl(biblioID, title, year, url) {
-  //console.log("addPublicationFromUrl:", arguments);
-
-  var xhr = new XMLHttpRequest();
-  xhr.open('GET', url, true);
-  // Setting the wanted responseType to "blob"
-  // http://www.w3.org/TR/XMLHttpRequest2/#the-response-attribute
-  xhr.responseType = 'blob';
-  xhr.onload = function (evt) {
-    if (xhr.status == 200) {
-      //console.log("Blob retrieved");
-      var blob = xhr.response;
-      //console.log("Blob:", blob);
-      addPublication(biblioID, title, year, blob);
-    } else {
-      console.error("addPublicationFromUrl error:",
-      xhr.responseText, xhr.status);
-    }
-  };
-  xhr.send();
-
-  // We can't use jQuery here because as of jQuery 1.8.3 the new "blob"
-  // responseType is not handled.
-  // http://bugs.jquery.com/ticket/11461
-  // http://bugs.jquery.com/ticket/7248
-  // $.ajax({
-  //   url: url,
-  //   type: 'GET',
-  //   xhrFields: { responseType: 'blob' },
-  //   success: function(data, textStatus, jqXHR) {
-  //     console.log("Blob retrieved");
-  //     console.log("Blob:", data);
-  //     // addPublication(biblioID, title, year, data);
-  //   },
-  //   error: function(jqXHR, textStatus, errorThrown) {
-  //     console.error(errorThrown);
-  //     displayActionFailure("Error during blob retrieval");
-  //   }
-  // });
-}
-
-/**
- * @param {string} biblioID
- * @param {string} title
- * @param {number} year
  * @param {Blob=} blob
  */
 function addPublication(biblioID, title, year, blob) {
@@ -402,11 +352,8 @@ function addEventListeners() {
     // have its value, but instead of doing that we rather use a "reset" type
     // input in the HTML form.
     //file_input.val(null);
-    var file_url = $('#pub-file-url').val();
     if (selected_file) {
       addPublication(biblioID, title, year, selected_file);
-    } else if (file_url) {
-      addPublicationFromUrl(biblioID, title, year, file_url);
     } else {
       addPublication(biblioID, title, year);
     }
