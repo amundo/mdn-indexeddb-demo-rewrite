@@ -21,14 +21,13 @@ var current_view_pub_key;
 
 function openDb() {
   console.log("openDb ...");
-  var req = indexedDB.open(DB_NAME, DB_VERSION);
+  var req = indexedDB.open(DB_NAME, DB_VERSION)
+
   req.onsuccess = function (evt) {
-    // Better use "this" than "req" to get the result to avoid problems with
-    // garbage collection.
-    // db = req.result;
-    db = this.result;
+    db = evt.target.result;
     console.log("openDb DONE");
-  };
+  }
+
   req.onerror = function (evt) {
     console.error("openDb:", evt.target.errorCode);
   };
