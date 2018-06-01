@@ -39,7 +39,7 @@
       var store = evt.currentTarget.result.createObjectStore(
         DB_STORE_NAME, { keyPath: 'id', autoIncrement: true });
 
-      store.createIndex('biblioid', 'biblioid', { unique: true });
+      store.createIndex('biblioID', 'biblioID', { unique: true });
       store.createIndex('title', 'title', { unique: false });
       store.createIndex('year', 'year', { unique: false });
     };
@@ -120,7 +120,7 @@
           var value = evt.target.result;
           var list_item = $('<li>' +
                             '[' + cursor.key + '] ' +
-                            '(biblioid: ' + value.biblioid + ') ' +
+                            '(biblioID: ' + value.biblioID + ') ' +
                             value.title +
                             '</li>');
           if (value.year != null)
@@ -210,7 +210,7 @@
   }
 
   /**
-   * @param {string} biblioid
+   * @param {string} biblioID
    * @param {string} title
    * @param {number} year
    * @param {string} url the URL of the image to download and store in the local
@@ -218,7 +218,7 @@
    *   "Same origin policy", thus for this method to work, the URL must come from
    *   the same origin as the web site/app this code is deployed on.
    */
-  function addPublicationFromUrl(biblioid, title, year, url) {
+  function addPublicationFromUrl(biblioID, title, year, url) {
     console.log("addPublicationFromUrl:", arguments);
 
     var xhr = new XMLHttpRequest();
@@ -231,7 +231,7 @@
         console.log("Blob retrieved");
         var blob = xhr.response;
         console.log("Blob:", blob);
-        addPublication(biblioid, title, year, blob);
+        addPublication(biblioID, title, year, blob);
       } else {
         console.error("addPublicationFromUrl error:",
         xhr.responseText, xhr.status);
@@ -250,7 +250,7 @@
     //   success: function(data, textStatus, jqXHR) {
     //     console.log("Blob retrieved");
     //     console.log("Blob:", data);
-    //     // addPublication(biblioid, title, year, data);
+    //     // addPublication(biblioID, title, year, data);
     //   },
     //   error: function(jqXHR, textStatus, errorThrown) {
     //     console.error(errorThrown);
@@ -260,14 +260,14 @@
   }
 
   /**
-   * @param {string} biblioid
+   * @param {string} biblioID
    * @param {string} title
    * @param {number} year
    * @param {Blob=} blob
    */
-  function addPublication(biblioid, title, year, blob) {
+  function addPublication(biblioID, title, year, blob) {
     console.log("addPublication arguments:", arguments);
-    var obj = { biblioid: biblioid, title: title, year: year };
+    var obj = { biblioID: biblioID, title: title, year: year };
     if (typeof blob != 'undefined')
       obj.blob = blob;
 
@@ -293,13 +293,13 @@
   }
 
   /**
-   * @param {string} biblioid
+   * @param {string} biblioID
    */
-  function deletePublicationFromBib(biblioid) {
+  function deletePublicationFromBib(biblioID) {
     console.log("deletePublication:", arguments);
     var store = getObjectStore(DB_STORE_NAME, 'readwrite');
-    var req = store.index('biblioid');
-    req.get(biblioid).onsuccess = function(evt) {
+    var req = store.index('biblioID');
+    req.get(biblioID).onsuccess = function(evt) {
       if (typeof evt.target.result == 'undefined') {
         displayActionFailure("No matching record found");
         return;
@@ -378,8 +378,8 @@
     $('#add-button').click(function(evt) {
       console.log("add ...");
       var title = $('#pub-title').val();
-      var biblioid = $('#pub-biblioid').val();
-      if (!title || !biblioid) {
+      var biblioID = $('#pub-biblioID').val();
+      if (!title || !biblioID) {
         displayActionFailure("Required field(s) missing");
         return;
       }
@@ -404,22 +404,22 @@
       //file_input.val(null);
       var file_url = $('#pub-file-url').val();
       if (selected_file) {
-        addPublication(biblioid, title, year, selected_file);
+        addPublication(biblioID, title, year, selected_file);
       } else if (file_url) {
-        addPublicationFromUrl(biblioid, title, year, file_url);
+        addPublicationFromUrl(biblioID, title, year, file_url);
       } else {
-        addPublication(biblioid, title, year);
+        addPublication(biblioID, title, year);
       }
 
     });
 
     $('#delete-button').click(function(evt) {
       console.log("delete ...");
-      var biblioid = $('#pub-biblioid-to-delete').val();
+      var biblioID = $('#pub-biblioID-to-delete').val();
       var key = $('#key-to-delete').val();
 
-      if (biblioid != '') {
-        deletePublicationFromBib(biblioid);
+      if (biblioID != '') {
+        deletePublicationFromBib(biblioID);
       } else if (key != '') {
         // Better use Number.isInteger if the engine has EcmaScript 6
         if (key == '' || isNaN(key))  {
